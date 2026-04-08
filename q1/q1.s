@@ -122,23 +122,17 @@ get:
 #     if (!root) return -1;
 #     if (root->val == val)
 #         return val;
-#     if (root->val < val)
-#         return max(root->val, getAtMost(val, root->right));
+#     if (root->val < val) {
+#         int ans = getAtMost(val, root->right);
+#         if (ans != -1) return ans;
+#         if (val >= -1)
+#             if (get(root->right, -1))
+#                 return -1;
+#         return root->val;
+#     }
 #     return getAtMost(val, root->left);
 # }
 
-# int max(int a, int b) {
-#     if (a > b)
-#         return a;
-#     return b;
-# }
-
-max:
-    bgt a0, a1, reta
-    mv a0, a1
-    ret
-    reta:
-        ret
 
 .globl getAtMost
 getAtMost:
@@ -165,19 +159,31 @@ getAtMost:
         continue32:
             bgt t1, s1, continue33
             mv a0, s1
+            # a1: root->right
             ld a1, 16(s0)
             call getAtMost
-            # t2: root->right
-            mv a1, a0
+            li t0, -1
+            beq a0, t0, continue34
+            j exit3
+            continue34:
+                li t0, -1
+                blt s1, t0, continue35
+                ld a0, 16(s0)
+                li a1, -1
+                call get
+                beqz a0, continue35
+                li a0, -1
+                j exit3
+
+            continue35:
+            # a0: root->val
             lw a0, 0(s0)
-            call max
             j exit3
 
             continue33:
                 mv a0, s1
-                # t2: root->left
-                ld t2, 8(s0)
-                mv a1, t2
+                # a1: root->left
+                ld a1, 8(s0)
                 call getAtMost
                 j exit3
 
